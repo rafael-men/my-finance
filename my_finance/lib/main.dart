@@ -2,17 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/config/firebase_env_options.dart';
 import 'package:my_finance/pages/homepage.dart';
 import 'package:my_finance/pages/trips_page.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    FirebaseEnvOptions.validateOrThrow();
+    await Firebase.initializeApp(options: FirebaseEnvOptions.currentPlatform);
     await FirebaseAuth.instance.signInAnonymously();
     await TravelData().init();
 
@@ -42,9 +41,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const Homepage(),
-      routes: {
-        '/trips': (context) => const TripsPage(),
-      },
+      routes: {'/trips': (context) => const TripsPage()},
     );
   }
 }
