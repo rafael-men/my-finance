@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "114535796016",
+    "project_id": "finance-7f1c9",
+    "storage_bucket": "finance-7f1c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114535796016:android:ce98156bbb5a7f96db8cf5",
+        "android_client_info": {
+          "package_name": "com.example.my_finance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-L3uHdV62pcpVZsmW86z73n-AHnHypXc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

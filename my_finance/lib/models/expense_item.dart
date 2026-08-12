@@ -1,40 +1,45 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_finance/models/purchase_category.dart';
 
-part 'expense_item.g.dart'; 
-
-@HiveType(typeId: 32)
-class ExpenseItem extends HiveObject {
-  @HiveField(0)
-  String name;
-
-  @HiveField(1)
-  String amount;
-
-  @HiveField(2)
-  DateTime date;
+class ExpenseItem {
+  final String id;
+  final String name;
+  final double amount;
+  final DateTime date;
+  final PurchaseCategory category;
 
   ExpenseItem({
+    this.id = '',
     required this.name,
     required this.amount,
     required this.date,
+    this.category = PurchaseCategory.outros,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'amount': amount,
+      'date': Timestamp.fromDate(date),
+      'category': category.name,
+    };
+  }
+
+  factory ExpenseItem.fromMap(Map<String, dynamic> map, [String id = '']) {
+    final dateValue = map['date'];
+    return ExpenseItem(
+      id: id,
+      name: map['name'] as String? ?? '',
+      amount: double.tryParse(map['amount']?.toString() ?? '') ?? 0.0,
+      category: PurchaseCategory.fromValue(map['category'] as String?),
+      date: dateValue is Timestamp
+          ? dateValue.toDate()
+          : (map['date'] as DateTime?) ?? DateTime.now(),
+    );
+  }
 
   @override
   String toString() {
-    return 'ExpenseItem(name: $name, amount: $amount, date: $date)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ExpenseItem &&
-        other.name == name &&
-        other.amount == amount &&
-        other.date == date;
-  }
-
-  @override
-  int get hashCode {
-    return name.hashCode ^ amount.hashCode ^ date.hashCode;
+    return 'ExpenseItem(id: $id, name: $name, amount: $amount, date: $date, category: ${category.name})';
   }
 }

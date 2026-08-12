@@ -1,29 +1,46 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'trip_item.g.dart';
-
-@HiveType(typeId: 34)
-class TripItem extends HiveObject {
-  @HiveField(0)
+class TripItem {
+  final String id;
   final String destination;
-
-  @HiveField(1)
   final String currency;
-
-  @HiveField(2)
   final DateTime startDate;
-
-  @HiveField(3)
   final DateTime endDate;
-
-  @HiveField(4)
   final String? notes;
 
   TripItem({
+    this.id = '',
     required this.destination,
     required this.currency,
     required this.startDate,
     required this.endDate,
     this.notes,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'destination': destination,
+      'currency': currency,
+      'startDate': Timestamp.fromDate(startDate),
+      'endDate': Timestamp.fromDate(endDate),
+      'notes': notes,
+    };
+  }
+
+  factory TripItem.fromMap(Map<String, dynamic> map, [String id = '']) {
+    return TripItem(
+      id: id,
+      destination: map['destination'] as String? ?? '',
+      currency: map['currency'] as String? ?? '',
+      startDate: _parseDate(map['startDate']),
+      endDate: _parseDate(map['endDate']),
+      notes: map['notes'] as String?,
+    );
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return DateTime.now();
+  }
 }

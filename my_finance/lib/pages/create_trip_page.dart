@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_finance/models/trip_item.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/utils/currencies.dart';
+import 'package:my_finance/utils/date_formatters.dart';
 
 class CreateTripPage extends StatefulWidget {
   const CreateTripPage({super.key});
@@ -12,43 +14,12 @@ class CreateTripPage extends StatefulWidget {
 class _CreateTripPageState extends State<CreateTripPage> {
   final _formKey = GlobalKey<FormState>();
   final _destinationController = TextEditingController();
-  String? _selectedCurrency; 
+  String? _selectedCurrency;
 
   final _notesController = TextEditingController();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   final TravelData _travelData = TravelData();
-
-  final List<String> _currencies = const [
-    'Dólar Americano (USD)',
-    'Euro (EUR)',
-    'Peso Argentino (ARS)',
-    'Boliviano Boliviano (BOB)',
-    'Real Brasileiro (BRL)',
-    'Peso Chileno (CLP)',
-    'Peso Colombiano (COP)',
-    'Colón Costarriquenho (CRC)',
-    'Peso Cubano (CUP)',
-    'Peso Dominicano (DOP)',
-    'Dólar Equatoriano (USD)',
-    'Colón Salvadorenho (SVC)', 
-    'Quetzal Guatemalteco (GTQ)',
-    'Gourde Haitiano (HTG)',
-    'Lempira Hondurenha (HNL)',
-    'Peso Mexicano (MXN)',
-    'Córdoba Nicaraguense (NIO)',
-    'Balboa Panamenho (PAB)', 
-    'Guarani Paraguaio (PYG)',
-    'Sol Peruano (PEN)',
-    'Dólar de Trinidad e Tobago (TTD)',
-    'Peso Uruguaio (UYU)',
-    'Bolívar Venezuelano (VES)',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -119,9 +90,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 validator: (value) => value!.isEmpty ? 'Informe o destino' : null,
               ),
               const SizedBox(height: 16),
-              // Novo DropdownButtonFormField para seleção de moeda
               DropdownButtonFormField<String>(
-                value: _selectedCurrency,
+                initialValue: _selectedCurrency,
                 decoration: const InputDecoration(
                   labelText: 'Moeda Local',
                   prefixIcon: Icon(Icons.currency_exchange),
@@ -134,7 +104,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   });
                 },
                 validator: (value) => value == null || value.isEmpty ? 'Selecione a moeda' : null,
-                items: _currencies.map<DropdownMenuItem<String>>((String currency) {
+                items: kCurrencies.map<DropdownMenuItem<String>>((String currency) {
                   return DropdownMenuItem<String>(
                     value: currency,
                     child: Text(currency),
@@ -145,7 +115,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Data de Início'),
-                subtitle: Text('${_startDate.day.toString().padLeft(2, '0')}/${_startDate.month.toString().padLeft(2, '0')}/${_startDate.year}'),
+                subtitle: Text(formatDate(_startDate)),
                 trailing: TextButton(
                   onPressed: () => _selectDate(context, true),
                   child: const Text('Alterar'),
@@ -154,7 +124,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Data de Término'),
-                subtitle: Text('${_endDate.day.toString().padLeft(2, '0')}/${_endDate.month.toString().padLeft(2, '0')}/${_endDate.year}'),
+                subtitle: Text(formatDate(_endDate)),
                 trailing: TextButton(
                   onPressed: () => _selectDate(context, false),
                   child: const Text('Alterar'),

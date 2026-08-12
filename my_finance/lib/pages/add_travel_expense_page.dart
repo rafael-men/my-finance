@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_finance/models/travel_expense.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/utils/date_formatters.dart';
 
 class AddTravelExpensePage extends StatefulWidget {
   final String tripId;
@@ -117,7 +118,7 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Data'),
-                subtitle: Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
+                subtitle: Text(formatDate(_selectedDate)),
                 trailing: TextButton(
                   onPressed: () => _selectDate(context),
                   child: const Text('Alterar'),

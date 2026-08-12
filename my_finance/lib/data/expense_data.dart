@@ -1,89 +1,105 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import '../models/expense_item.dart';
 
 class ExpenseData extends ChangeNotifier {
-  late final Box<ExpenseItem> _expenseBox;
+  late final CollectionReference<Map<String, dynamic>> _expensesRef;
+  List<ExpenseItem> _expenses = [];
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
 
   Future<void> init() async {
-    _expenseBox = await Hive.openBox<ExpenseItem>('expenseBox');
-  }
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    _expensesRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('expenses');
 
-  Future<void> prepareData() async {
-    notifyListeners(); 
-  }
+    final snapshot =
+        await _expensesRef.orderBy('date', descending: true).get();
+    _expenses = snapshot.docs
+        .map((doc) => ExpenseItem.fromMap(doc.data(), doc.id))
+        .toList();
+    notifyListeners();
 
-  List<ExpenseItem> get overallExpenseList => _expenseBox.values.toList();
+    _subscription = _expensesRef
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      _expenses = snapshot.docs
+          .map((doc) => ExpenseItem.fromMap(doc.data(), doc.id))
+          .toList();
+      notifyListeners();
+    }, onError: (Object error) {
+      debugPrint('Erro ao ouvir despesas: $error');
+    });
+  }
 
   List<ExpenseItem> getAllExpenseList() {
-    return overallExpenseList;
+    return List.from(_expenses);
   }
 
   Future<void> addExpense(ExpenseItem expense) async {
-    try {
-      await _expenseBox.add(expense);    
-      notifyListeners();
-    } catch (e) {
-      rethrow;
+    await _expensesRef.add(expense.toMap());
+  }
+
+  Future<void> updateExpense(
+      ExpenseItem oldExpense, ExpenseItem updatedExpense) async {
+    if (oldExpense.id.isNotEmpty) {
+      await _expensesRef.doc(oldExpense.id).update(updatedExpense.toMap());
     }
   }
 
   Future<void> deleteExpense(ExpenseItem expense) async {
-    try {
-      final keyToDelete = _expenseBox.keys.firstWhere(
-        (key) => _expenseBox.get(key) == expense,
-        orElse: () => null,
-      );
-
-      if (keyToDelete != null) {
-        await _expenseBox.delete(keyToDelete);
-        notifyListeners();
-      }
-    } catch (e) {
-      print('Erro ao deletar expense: $e');
+    if (expense.id.isNotEmpty) {
+      await _expensesRef.doc(expense.id).delete();
     }
   }
 
   Future<void> close() async {
-    await _expenseBox.close();
+    await _subscription?.cancel();
   }
 
   int getExpenseCount() {
-    return _expenseBox.length;
-  }
-
-  void refreshData() {
-    notifyListeners();
-    print('refreshData chamado manualmente');
+    return _expenses.length;
   }
 
   List<ExpenseItem> getExpensesByWeekday(int weekday) {
-  return _expenseBox.values.where((expense) {
-    return expense.date.weekday == weekday;
-  }).toList();
-}
-
-Map<int, List<ExpenseItem>> getExpensesGroupedByWeekday() {
-  final Map<int, List<ExpenseItem>> groupedExpenses = {};
-  
-  for (int i = 1; i <= 7; i++) {
-    groupedExpenses[i] = [];
+    return _expenses.where((expense) {
+      return expense.date.weekday == weekday;
+    }).toList();
   }
-  
-  
-  for (var expense in _expenseBox.values) {
-    final weekday = expense.date.weekday;
-    groupedExpenses[weekday]!.add(expense);
-  }
-  
-  return groupedExpenses;
-}
 
-double getTotalByWeekday(int weekday) {
-  final expenses = getExpensesByWeekday(weekday);
-  return expenses.fold<double>(
-    0, 
-    (total, expense) => total + (double.tryParse(expense.amount) ?? 0)
-  );
-}
+  Map<int, List<ExpenseItem>> getExpensesGroupedByWeekday() {
+    final Map<int, List<ExpenseItem>> groupedExpenses = {};
+
+    for (int i = 1; i <= 7; i++) {
+      groupedExpenses[i] = [];
+    }
+
+    for (var expense in _expenses) {
+      final weekday = expense.date.weekday;
+      groupedExpenses[weekday]!.add(expense);
+    }
+
+    return groupedExpenses;
+  }
+
+  double getTotalByWeekday(int weekday) {
+    final expenses = getExpensesByWeekday(weekday);
+    return expenses.fold<double>(
+      0,
+      (total, expense) => total + expense.amount,
+    );
+  }
+
+  List<ExpenseItem> getExpensesByMonth(int month, int year) {
+    final expenses = _expenses
+        .where((expense) =>
+            expense.date.month == month && expense.date.year == year)
+        .toList();
+    expenses.sort((a, b) => b.date.compareTo(a.date));
+    return expenses;
+  }
 }

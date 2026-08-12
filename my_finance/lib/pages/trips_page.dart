@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_finance/data/travel_data.dart';
 import 'package:my_finance/models/trip_item.dart';
 import 'package:my_finance/pages/create_trip_page.dart';
 import 'package:my_finance/pages/trip_detail_page.dart';
-import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/widgets/common/confirm_dialog.dart';
+import 'package:my_finance/widgets/common/empty_state.dart';
 import 'package:my_finance/widgets/sidebar.dart';
+import 'package:my_finance/widgets/trips/trip_card.dart';
 
 class TripsPage extends StatefulWidget {
   const TripsPage({super.key});
@@ -16,31 +18,21 @@ class TripsPage extends StatefulWidget {
 class _TripsPageState extends State<TripsPage> {
   final TravelData travelData = TravelData();
 
-
-  Future<void> _deleteTripWithConfirmation(BuildContext context, int tripKey, String tripDestination) async {
-    final bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: const Text('Tem certeza que deseja excluir esta viagem e todos os seus gastos?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false), 
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true), 
-            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+  Future<void> _deleteTripWithConfirmation(
+      BuildContext context, String tripId, String tripDestination) async {
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Confirmar exclusão',
+      message: 'Tem certeza que deseja excluir esta viagem e todos os seus gastos?',
     );
 
     if (confirm) {
-      await travelData.deleteTrip(tripKey);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Viagem "$tripDestination" excluída')),
-      );
+      await travelData.deleteTrip(tripId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Viagem "$tripDestination" excluída')),
+        );
+      }
     }
   }
 
@@ -60,61 +52,28 @@ class _TripsPageState extends State<TripsPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ValueListenableBuilder(
-          valueListenable: travelData.tripBox.listenable(),
-          builder: (context, Box<TripItem> box, _) {
-            if (box.isEmpty) {
-              return const Center(
-                child: Text('Nenhuma viagem cadastrada ainda'),
+        child: ListenableBuilder(
+          listenable: travelData,
+          builder: (context, _) {
+            final trips = travelData.getAllTrips();
+
+            if (trips.isEmpty) {
+              return const EmptyState(
+                icon: Icons.airplane_ticket_outlined,
+                message: 'Nenhuma viagem cadastrada ainda',
               );
             }
-            
-            final trips = box.values.toList()..sort((a, b) => b.startDate.compareTo(a.startDate));
 
             return ListView.builder(
               itemCount: trips.length,
               itemBuilder: (context, index) {
                 final trip = trips[index];
-                final key = trip.key as int;
-                final totalExpenses = travelData.getTotalExpensesForTrip(key.toString());
-
-                return Card( // O Card não precisa mais do Dismissible se você só quer um botão
-                  elevation: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  color: Colors.deepPurple[50],
-                  child: ListTile(
-                    title: Text(
-                      trip.destination,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}'),
-                        Text(
-                          'Total gasto: ${trip.currency} ${totalExpenses.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: Colors.deepPurple[800],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteTripWithConfirmation(context, key, trip.destination),
-                        ),
-                        const Icon(Icons.chevron_right), 
-                      ],
-                    ),
-                    onTap: () => _navigateToTripDetail(context, trip, key.toString()),
-                  ),
+                return TripCard(
+                  trip: trip,
+                  totalExpenses: travelData.getTotalExpensesForTrip(trip.id),
+                  onDelete: () => _deleteTripWithConfirmation(
+                      context, trip.id, trip.destination),
+                  onTap: () => _navigateToTripDetail(context, trip),
                 );
               },
             );
@@ -124,10 +83,6 @@ class _TripsPageState extends State<TripsPage> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
   void _navigateToCreateTrip(BuildContext context) async {
     await Navigator.push(
       context,
@@ -135,11 +90,11 @@ class _TripsPageState extends State<TripsPage> {
     );
   }
 
-  void _navigateToTripDetail(BuildContext context, TripItem trip, String tripId) async {
+  void _navigateToTripDetail(BuildContext context, TripItem trip) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TripDetailPage(trip: trip, tripId: tripId),
+        builder: (context) => TripDetailPage(trip: trip, tripId: trip.id),
       ),
     );
   }

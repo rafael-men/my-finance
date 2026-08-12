@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:my_finance/models/trip_item.dart';
-import 'package:my_finance/models/travel_expense.dart';
-import 'package:my_finance/pages/add_travel_expense_page.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/models/trip_item.dart';
+import 'package:my_finance/pages/add_travel_expense_page.dart';
+import 'package:my_finance/widgets/common/empty_state.dart';
+import 'package:my_finance/widgets/trips/travel_expense_card.dart';
+import 'package:my_finance/widgets/trips/trip_total_card.dart';
 
 class TripDetailPage extends StatefulWidget {
   final TripItem trip;
@@ -47,38 +48,15 @@ class _TripDetailPageState extends State<TripDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              color: Colors.deepPurple[50],
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total gasto na viagem:',
-                      style: TextStyle(
-                        color: Colors.deepPurple[800],
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ValueListenableBuilder(
-                      valueListenable: Hive.box<TravelExpense>('travel_expenses').listenable(),
-                      builder: (context, Box<TravelExpense> box, _) {
-                        final total = travelData.getTotalExpensesForTrip(widget.tripId);
-                        return Text(
-                          '${widget.trip.currency} ${total.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: Colors.deepPurple[900],
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+            ListenableBuilder(
+              listenable: travelData,
+              builder: (context, _) {
+                final total = travelData.getTotalExpensesForTrip(widget.tripId);
+                return TripTotalCard(
+                  currency: widget.trip.currency,
+                  total: total,
+                );
+              },
             ),
             const SizedBox(height: 20),
             const Text(
@@ -87,34 +65,25 @@ class _TripDetailPageState extends State<TripDetailPage> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: ValueListenableBuilder(
-                valueListenable: Hive.box<TravelExpense>('travel_expenses').listenable(),
-                builder: (context, Box<TravelExpense> box, _) {
-                  final expenses = travelData.getExpensesForTrip(widget.tripId);
-                  
+              child: ListenableBuilder(
+                listenable: travelData,
+                builder: (context, _) {
+                  final expenses =
+                      travelData.getExpensesForTrip(widget.tripId);
+
                   if (expenses.isEmpty) {
-                    return const Center(
-                      child: Text('Nenhum gasto registrado ainda'),
+                    return const EmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      message: 'Nenhum gasto registrado ainda',
                     );
                   }
-                  
+
                   return ListView.builder(
                     itemCount: expenses.length,
                     itemBuilder: (context, index) {
-                      final expense = expenses[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          title: Text(expense.description),
-                          subtitle: Text('${expense.date.day}/${expense.date.month}/${expense.date.year}'),
-                          trailing: Text(
-                            '${widget.trip.currency} ${expense.amount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                      return TravelExpenseCard(
+                        expense: expenses[index],
+                        currency: widget.trip.currency,
                       );
                     },
                   );

@@ -1,69 +1,117 @@
-import 'package:hive/hive.dart';
-import 'package:my_finance/models/trip_item.dart';
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:my_finance/models/travel_expense.dart';
+import 'package:my_finance/models/trip_item.dart';
 
-class TravelData {
-
+class TravelData extends ChangeNotifier {
   static final TravelData _instance = TravelData._internal();
-
 
   factory TravelData() {
     return _instance;
   }
 
-
   TravelData._internal();
 
-  late Box<TripItem> _tripBox;
-  late Box<TravelExpense> _expenseBox;
+  late final CollectionReference<Map<String, dynamic>> _tripRef;
+  late final CollectionReference<Map<String, dynamic>> _expenseRef;
+  List<TripItem> _trips = [];
+  List<TravelExpense> _expenses = [];
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _tripSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _expenseSub;
   bool _initialized = false;
 
-
   Future<void> init() async {
-    if (!_initialized) {
-      _tripBox = await Hive.openBox<TripItem>('trips');
-      _expenseBox = await Hive.openBox<TravelExpense>('travel_expenses');
-      _initialized = true;
-    }
-  }
+    if (_initialized) return;
 
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    _tripRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('trips');
+    _expenseRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('travel_expenses');
 
-  Box<TripItem> get tripBox {
-    if (!_initialized) throw Exception('TravelData não inicializado. Chame init() primeiro.');
-    return _tripBox;
-  }
+    final tripsSnapshot =
+        await _tripRef.orderBy('startDate', descending: true).get();
+    _trips = tripsSnapshot.docs
+        .map((doc) => TripItem.fromMap(doc.data(), doc.id))
+        .toList();
 
-  Box<TravelExpense> get expenseBox {
-    if (!_initialized) throw Exception('TravelData não inicializado. Chame init() primeiro.');
-    return _expenseBox;
-  }
+    final expensesSnapshot =
+        await _expenseRef.orderBy('date', descending: true).get();
+    _expenses = expensesSnapshot.docs
+        .map((doc) => TravelExpense.fromMap(doc.data(), doc.id))
+        .toList();
 
+    notifyListeners();
+    _initialized = true;
 
-  Future<void> deleteTrip(int tripKey) async {
-    final Map<dynamic, TravelExpense> expensesMap = _expenseBox.toMap();
-    final List<dynamic> keysToDelete = [];
+    _tripSub = _tripRef.orderBy('startDate', descending: true).snapshots().listen(
+      (snapshot) {
+        _trips = snapshot.docs
+            .map((doc) => TripItem.fromMap(doc.data(), doc.id))
+            .toList();
+        notifyListeners();
+      },
+      onError: (Object error) {
+        debugPrint('Erro ao ouvir viagens: $error');
+      },
+    );
 
-    expensesMap.forEach((key, expense) {
-      if (expense.tripId == tripKey.toString()) {
-        keysToDelete.add(key);
-      }
+    _expenseSub = _expenseRef
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      _expenses = snapshot.docs
+          .map((doc) => TravelExpense.fromMap(doc.data(), doc.id))
+          .toList();
+      notifyListeners();
+    }, onError: (Object error) {
+      debugPrint('Erro ao ouvir gastos de viagem: $error');
     });
-
-    if (keysToDelete.isNotEmpty) {
-      await _expenseBox.deleteAll(keysToDelete);
-    }
-    
-    await _tripBox.delete(tripKey);
   }
-  
-  Future<void> addTrip(TripItem trip) async => await tripBox.add(trip);
-  List<TripItem> getAllTrips() => tripBox.values.toList();
-  Future<void> addExpense(TravelExpense expense) async => await expenseBox.add(expense);
-  List<TravelExpense> getExpensesForTrip(String tripId) =>
-      expenseBox.values.where((e) => e.tripId == tripId).toList();
+
+  List<TripItem> getAllTrips() => List.from(_trips);
+
+  Future<void> addTrip(TripItem trip) async {
+    await _tripRef.add(trip.toMap());
+    notifyListeners();
+  }
+
+  Future<void> deleteTrip(String tripId) async {
+    final expensesSnapshot =
+        await _expenseRef.where('tripId', isEqualTo: tripId).get();
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in expensesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_tripRef.doc(tripId));
+
+    await batch.commit();
+    notifyListeners();
+  }
+
+  Future<void> addExpense(TravelExpense expense) async {
+    await _expenseRef.add(expense.toMap());
+    notifyListeners();
+  }
+
+  List<TravelExpense> getExpensesForTrip(String tripId) {
+    return _expenses.where((e) => e.tripId == tripId).toList();
+  }
+
   double getTotalExpensesForTrip(String tripId) {
-    return expenseBox.values
-        .where((e) => e.tripId == tripId)
-        .fold(0.0, (sum, expense) => sum + expense.amount);
+    return getExpensesForTrip(tripId)
+        .fold(0.0, (acc, expense) => acc + expense.amount);
+  }
+
+  Future<void> close() async {
+    await _tripSub?.cancel();
+    await _expenseSub?.cancel();
   }
 }
