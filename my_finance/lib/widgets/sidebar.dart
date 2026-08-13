@@ -20,6 +20,19 @@ class Sidebar extends StatelessWidget {
     this.destination = SidebarDestination.home,
   });
 
+  Widget get _logo => Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(31, 255, 255, 255),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(
+          Icons.account_balance_wallet_outlined,
+          color: Colors.white,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -32,56 +45,59 @@ class Sidebar extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(31, 255, 255, 255),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (expanded) ...[
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'My Finance',
-                            style: TextStyle(
+              child: expanded
+                  ? Row(
+                      children: [
+                        _logo,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'My Finance',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Painel financeiro',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (showToggle)
+                          IconButton(
+                            onPressed: onToggleExpanded,
+                            icon: const Icon(
+                              Icons.chevron_left,
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Painel financeiro',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _logo,
+                        if (showToggle) ...[
+                          const SizedBox(height: 8),
+                          IconButton(
+                            onPressed: onToggleExpanded,
+                            icon: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.white,
                             ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-                  if (showToggle)
-                    IconButton(
-                      onPressed: onToggleExpanded,
-                      icon: Icon(
-                        expanded ? Icons.chevron_left : Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),

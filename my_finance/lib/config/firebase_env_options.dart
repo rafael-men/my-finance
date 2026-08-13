@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:my_finance/utils/exceptions/exceptions.dart';
 
 class FirebaseEnvOptions {
   static const String _webApiKey = String.fromEnvironment(
@@ -111,11 +112,15 @@ class FirebaseEnvOptions {
       case TargetPlatform.windows:
         return windows;
       case TargetPlatform.linux:
-        throw UnsupportedError(
+        throw InitializationException(
           'Firebase options nao configuradas para Linux por ambiente.',
+          origin: 'FirebaseEnvOptions',
         );
       default:
-        throw UnsupportedError('Plataforma nao suportada para Firebase.');
+        throw InitializationException(
+          'Plataforma nao suportada para Firebase.',
+          origin: 'FirebaseEnvOptions',
+        );
     }
   }
 
@@ -207,8 +212,9 @@ class FirebaseEnvOptions {
 
   static void validateOrThrow() {
     if (!hasRequiredValues) {
-      throw StateError(
+      throw InitializationException(
         'Firebase nao configurado. Rode com --dart-define-from-file=env.json.',
+        origin: 'FirebaseEnvOptions',
       );
     }
   }

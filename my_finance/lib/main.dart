@@ -5,6 +5,7 @@ import 'package:my_finance/data/travel_data.dart';
 import 'package:my_finance/config/firebase_env_options.dart';
 import 'package:my_finance/pages/homepage.dart';
 import 'package:my_finance/pages/trips_page.dart';
+import 'package:my_finance/utils/exceptions/exceptions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +18,8 @@ void main() async {
 
     runApp(const MyApp());
   } catch (e) {
-    debugPrint('Erro na inicialização: $e');
+    final error = AppException.from(e, origin: 'main');
+    debugPrint('Erro na inicialização: $error');
     runApp(
       MaterialApp(
         home: Scaffold(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_finance/data/expense_data.dart';
 import 'package:my_finance/models/expense_item.dart';
 import 'package:my_finance/utils/date_formatters.dart';
+import 'package:my_finance/utils/exceptions/exceptions.dart';
 import 'package:my_finance/widgets/common/confirm_dialog.dart';
 import 'package:my_finance/widgets/common/empty_state.dart';
 import 'package:my_finance/widgets/compras/purchase_form_dialog.dart';
@@ -34,7 +35,8 @@ class _ComprasPageState extends State<ComprasPage> {
       _expenseData = ExpenseData();
       await _expenseData!.init();
     } catch (e) {
-      _initError = 'Erro ao carregar compras: $e';
+      final error = AppException.from(e, origin: 'ComprasPage');
+      _initError = 'Erro ao carregar compras: ${error.message}';
     } finally {
       if (mounted) {
         setState(() {
@@ -46,7 +48,6 @@ class _ComprasPageState extends State<ComprasPage> {
 
   @override
   void dispose() {
-    _expenseData?.close();
     super.dispose();
   }
 
@@ -168,26 +169,9 @@ class _ComprasPageState extends State<ComprasPage> {
                             ),
                           ),
                           const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              'Suas Compras em ${fullMonthName(_selectedMonth.month)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF2F0936),
-                              ),
-                            ),
-                          ),
                           const SizedBox(height: 12),
                           Text(
-                            'Total do mês: R\$ ${total.toStringAsFixed(2)}',
+                            'Total gasto no mês: R\$ ${total.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -206,15 +190,19 @@ class _ComprasPageState extends State<ComprasPage> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Text(
-                          'Compras de ${fullMonthName(_selectedMonth.month)} '
-                          '${_selectedMonth.year}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Compras de ${fullMonthName(_selectedMonth.month)} '
+                            '${_selectedMonth.year}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Text(
                           '${purchases.length} ${purchases.length == 1 ? 'item' : 'itens'}',
                           style: TextStyle(color: Colors.grey.shade600),

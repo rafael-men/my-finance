@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_finance/utils/currencies.dart';
 
 class TripTotalCard extends StatelessWidget {
   final String currency;
@@ -24,12 +25,16 @@ class TripTotalCard extends StatelessWidget {
               style: TextStyle(color: Colors.deepPurple[800], fontSize: 16),
             ),
             const SizedBox(height: 8),
-            Text(
-              '$currency ${total.toStringAsFixed(2)}',
-              style: TextStyle(
-                color: Colors.deepPurple[900],
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${currencyCode(currency)} ${total.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: Colors.deepPurple[900],
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],

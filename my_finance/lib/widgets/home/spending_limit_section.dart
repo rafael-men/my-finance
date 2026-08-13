@@ -19,33 +19,28 @@ class SpendingLimitSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Defina o limite de gastos',
-                  border: OutlineInputBorder(),
-                  prefixText: 'R\$ ',
-                ),
-                onChanged: (value) {
-                  onChanged(double.tryParse(value) ?? 0.0);
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Limite: R\$ ${spendingLimit.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.redAccent,
-              ),
-            ),
-          ],
+        TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Defina o limite de gastos',
+            border: OutlineInputBorder(),
+            prefixText: 'R\$ ',
+          ),
+          onChanged: (value) {
+            onChanged(double.tryParse(value) ?? 0.0);
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Limite: R\$ ${spendingLimit.toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.redAccent,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         if (spendingLimit > 0 && totalSpent > spendingLimit) ...[
           const SizedBox(height: 8),

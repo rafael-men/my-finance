@@ -1,38 +1,37 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/expense_item.dart';
+import 'package:my_finance/models/expense_item.dart';
+import 'package:my_finance/utils/exceptions/exceptions.dart';
+import 'expense_repository.dart';
 
 class ExpenseData extends ChangeNotifier {
-  late final CollectionReference<Map<String, dynamic>> _expensesRef;
+  static final ExpenseData _instance =
+      ExpenseData.withRepository(FirebaseExpenseRepository());
+
+  factory ExpenseData() => _instance;
+
+  ExpenseData.withRepository(this._repository);
+
+  final ExpenseRepository _repository;
   List<ExpenseItem> _expenses = [];
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
+  StreamSubscription<List<ExpenseItem>>? _subscription;
+  bool _initialized = false;
 
   Future<void> init() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    _expensesRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('expenses');
+    if (_initialized) return;
 
-    final snapshot =
-        await _expensesRef.orderBy('date', descending: true).get();
-    _expenses = snapshot.docs
-        .map((doc) => ExpenseItem.fromMap(doc.data(), doc.id))
-        .toList();
+    _expenses = await _repository.fetchAll();
+    _initialized = true;
     notifyListeners();
 
-    _subscription = _expensesRef
-        .orderBy('date', descending: true)
-        .snapshots()
-        .listen((snapshot) {
-      _expenses = snapshot.docs
-          .map((doc) => ExpenseItem.fromMap(doc.data(), doc.id))
-          .toList();
+    _subscription = _repository.watchAll().listen((list) {
+      _expenses = list;
       notifyListeners();
     }, onError: (Object error) {
-      debugPrint('Erro ao ouvir despesas: $error');
+      debugPrint(
+        'Erro ao ouvir despesas: '
+        '${AppException.from(error, origin: 'ExpenseData')}',
+      );
     });
   }
 
@@ -41,57 +40,25 @@ class ExpenseData extends ChangeNotifier {
   }
 
   Future<void> addExpense(ExpenseItem expense) async {
-    await _expensesRef.add(expense.toMap());
+    await _repository.add(expense);
   }
 
   Future<void> updateExpense(
       ExpenseItem oldExpense, ExpenseItem updatedExpense) async {
-    if (oldExpense.id.isNotEmpty) {
-      await _expensesRef.doc(oldExpense.id).update(updatedExpense.toMap());
-    }
+    await _repository.update(oldExpense, updatedExpense);
   }
 
   Future<void> deleteExpense(ExpenseItem expense) async {
-    if (expense.id.isNotEmpty) {
-      await _expensesRef.doc(expense.id).delete();
-    }
+    await _repository.delete(expense);
   }
 
   Future<void> close() async {
     await _subscription?.cancel();
+    _initialized = false;
   }
 
   int getExpenseCount() {
     return _expenses.length;
-  }
-
-  List<ExpenseItem> getExpensesByWeekday(int weekday) {
-    return _expenses.where((expense) {
-      return expense.date.weekday == weekday;
-    }).toList();
-  }
-
-  Map<int, List<ExpenseItem>> getExpensesGroupedByWeekday() {
-    final Map<int, List<ExpenseItem>> groupedExpenses = {};
-
-    for (int i = 1; i <= 7; i++) {
-      groupedExpenses[i] = [];
-    }
-
-    for (var expense in _expenses) {
-      final weekday = expense.date.weekday;
-      groupedExpenses[weekday]!.add(expense);
-    }
-
-    return groupedExpenses;
-  }
-
-  double getTotalByWeekday(int weekday) {
-    final expenses = getExpensesByWeekday(weekday);
-    return expenses.fold<double>(
-      0,
-      (total, expense) => total + expense.amount,
-    );
   }
 
   List<ExpenseItem> getExpensesByMonth(int month, int year) {

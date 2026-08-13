@@ -40,9 +40,29 @@ class PurchaseListTile extends StatelessWidget {
           ),
           child: Icon(category.icon, color: category.color),
         ),
-        title: Text(
-          purchase.name,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                purchase.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              'R\$ ${purchase.amount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: Color.fromARGB(255, 47, 9, 54),
+              ),
+            ),
+          ],
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
@@ -54,22 +74,8 @@ class PurchaseListTile extends StatelessWidget {
             ),
           ),
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'R\$ ${purchase.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: Color.fromARGB(255, 47, 9, 54),
-              ),
-            ),
-            if (showActions) ...[
-              const SizedBox(height: 4),
-              Row(
+        trailing: showActions
+            ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
@@ -87,10 +93,8 @@ class PurchaseListTile extends StatelessWidget {
                     onPressed: onDelete,
                   ),
                 ],
-              ),
-            ],
-          ],
-        ),
+              )
+            : null,
       ),
     );
   }

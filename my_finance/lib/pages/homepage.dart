@@ -3,6 +3,7 @@ import 'package:my_finance/data/expense_data.dart';
 import 'package:my_finance/data/settings_data.dart';
 import 'package:my_finance/models/expense_item.dart';
 import 'package:my_finance/utils/date_formatters.dart';
+import 'package:my_finance/utils/exceptions/exceptions.dart';
 import 'package:my_finance/widgets/home/home_expenses_list.dart';
 import 'package:my_finance/widgets/home/monthly_expenses_chart.dart';
 import 'package:my_finance/widgets/home/spending_limit_section.dart';
@@ -40,7 +41,8 @@ class _HomepageState extends State<Homepage> {
         isLoading = false;
       });
     } catch (e) {
-      debugPrint('Erro ao inicializar ExpenseData: $e');
+      final error = AppException.from(e, origin: 'Homepage');
+      debugPrint('Erro ao inicializar ExpenseData: $error');
       setState(() {
         isLoading = false;
       });
@@ -65,7 +67,6 @@ class _HomepageState extends State<Homepage> {
   @override
   void dispose() {
     _limitController.dispose();
-    expenseData?.close();
     super.dispose();
   }
 
@@ -204,14 +205,18 @@ class _HomepageState extends State<Homepage> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'Compras deste mês',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      const Expanded(
+                        child: Text(
+                          'Compras deste mês',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Text(
                         '${filteredExpenses.length} itens',
                         style: TextStyle(color: Colors.grey.shade600),

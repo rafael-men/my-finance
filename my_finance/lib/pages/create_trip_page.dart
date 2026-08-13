@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_finance/models/trip_item.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/data/currency_data.dart';
+import 'package:my_finance/models/currency.dart';
 import 'package:my_finance/utils/currencies.dart';
 import 'package:my_finance/utils/date_formatters.dart';
 
@@ -15,11 +17,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final _formKey = GlobalKey<FormState>();
   final _destinationController = TextEditingController();
   String? _selectedCurrency;
+  late Future<List<Currency>> _currenciesFuture;
 
   final _notesController = TextEditingController();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   final TravelData _travelData = TravelData();
+
+  @override
+  void initState() {
+    super.initState();
+    _currenciesFuture = CurrencyData().getCurrencies();
+  }
 
   @override
   void dispose() {
@@ -52,9 +61,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   Future<void> _saveTrip() async {
     if (_formKey.currentState!.validate()) {
+      final currency = _selectedCurrency ?? '';
       final newTrip = TripItem(
         destination: _destinationController.text,
-        currency: _selectedCurrency!, 
+        currency: currency,
         startDate: _startDate,
         endDate: _endDate,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
@@ -90,26 +100,35 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 validator: (value) => value!.isEmpty ? 'Informe o destino' : null,
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedCurrency,
-                decoration: const InputDecoration(
-                  labelText: 'Moeda Local',
-                  prefixIcon: Icon(Icons.currency_exchange),
-                  border: OutlineInputBorder(),
-                ),
-                hint: const Text('Selecione a moeda'),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedCurrency = newValue;
-                  });
-                },
-                validator: (value) => value == null || value.isEmpty ? 'Selecione a moeda' : null,
-                items: kCurrencies.map<DropdownMenuItem<String>>((String currency) {
-                  return DropdownMenuItem<String>(
-                    value: currency,
-                    child: Text(currency),
+              FutureBuilder<List<Currency>>(
+                future: _currenciesFuture,
+                builder: (context, snapshot) {
+                  final currencies = snapshot.data ?? kDefaultCurrencies;
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedCurrency,
+                    decoration: const InputDecoration(
+                      labelText: 'Moeda Local',
+                      prefixIcon: Icon(Icons.currency_exchange),
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('Selecione a moeda'),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedCurrency = newValue;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Selecione a moeda' : null,
+                    items: currencies.map<DropdownMenuItem<String>>(
+                      (currency) {
+                        return DropdownMenuItem<String>(
+                          value: currency.code,
+                          child: Text(currency.label),
+                        );
+                      },
+                    ).toList(),
                   );
-                }).toList(),
+                },
               ),
               const SizedBox(height: 16),
               ListTile(

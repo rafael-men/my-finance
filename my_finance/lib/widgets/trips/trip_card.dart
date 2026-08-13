@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_finance/models/trip_item.dart';
+import 'package:my_finance/utils/currencies.dart';
 import 'package:my_finance/utils/date_formatters.dart';
 
 class TripCard extends StatelessWidget {
@@ -26,6 +27,8 @@ class TripCard extends StatelessWidget {
         title: Text(
           trip.destination,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,11 +36,13 @@ class TripCard extends StatelessWidget {
             Text(
                 '${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}'),
             Text(
-              'Total gasto: ${trip.currency} ${totalExpenses.toStringAsFixed(2)}',
+              'Total gasto: ${currencyCode(trip.currency)} ${totalExpenses.toStringAsFixed(2)}',
               style: TextStyle(
                 color: Colors.deepPurple[800],
                 fontWeight: FontWeight.bold,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
