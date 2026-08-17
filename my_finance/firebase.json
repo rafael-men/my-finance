@@ -1,1 +1,63 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"finance-7f1c9","appId":"1:114535796016:android:ce98156bbb5a7f96db8cf5","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"finance-7f1c9","configurations":{"android":"1:114535796016:android:ce98156bbb5a7f96db8cf5","ios":"1:114535796016:ios:e45381a3c7068dafdb8cf5","macos":"1:114535796016:ios:e45381a3c7068dafdb8cf5","web":"1:114535796016:web:16e1d871603ce738db8cf5","windows":"1:114535796016:web:4fb25c5b24640397db8cf5"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-XSS-Protection", "value": "1; mode=block" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+          { "key": "X-Powered-By", "value": "" },
+          { "key": "Server", "value": "" }
+        ]
+      },
+      {
+        "source": "**/*.@(json|xml|txt)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.json",
+      "**/*.xml",
+      "**/*.txt",
+      "**/*.md"
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "finance-7f1c9",
+          "appId": "1:114535796016:android:ce98156bbb5a7f96db8cf5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "finance-7f1c9",
+          "configurations": {
+            "android": "1:114535796016:android:ce98156bbb5a7f96db8cf5",
+            "ios": "1:114535796016:ios:e45381a3c7068dafdb8cf5",
+            "macos": "1:114535796016:ios:e45381a3c7068dafdb8cf5",
+            "web": "1:114535796016:web:16e1d871603ce738db8cf5",
+            "windows": "1:114535796016:web:4fb25c5b24640397db8cf5"
+          }
+        }
+      }
+    }
+  }
+}

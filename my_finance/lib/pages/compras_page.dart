@@ -171,7 +171,7 @@ class _ComprasPageState extends State<ComprasPage> {
                           const SizedBox(height: 14),
                           const SizedBox(height: 12),
                           Text(
-                            'Total gasto no mês: R\$ ${total.toStringAsFixed(2)}',
+                            'Total gasto no mês: ${formatCurrency(total)}',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,

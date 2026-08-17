@@ -19,7 +19,6 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   ExpenseData? expenseData;
-  final TextEditingController _limitController = TextEditingController();
   double spendingLimit = 0.0;
   bool isLoading = true;
 
@@ -35,7 +34,6 @@ class _HomepageState extends State<Homepage> {
       await expenseData!.init();
 
       spendingLimit = await SettingsData().getSpendingLimit();
-      _limitController.text = spendingLimit > 0 ? spendingLimit.toString() : '';
 
       setState(() {
         isLoading = false;
@@ -56,18 +54,16 @@ class _HomepageState extends State<Homepage> {
     if (!mounted) return;
     setState(() {
       spendingLimit = limit;
-      _limitController.text = limit > 0 ? limit.toString() : '';
     });
   }
 
   Future<void> _saveSpendingLimit(double limit) async {
     await SettingsData().saveSpendingLimit(limit);
-  }
-
-  @override
-  void dispose() {
-    _limitController.dispose();
-    super.dispose();
+    if (mounted) {
+      setState(() {
+        spendingLimit = limit;
+      });
+    }
   }
 
   List<ExpenseItem> getCurrentMonthExpenses() {
@@ -173,7 +169,7 @@ class _HomepageState extends State<Homepage> {
 
                   const SizedBox(height: 16),
                   Text(
-                    'Total gasto no mês: R\$ ${totalSpent.toStringAsFixed(2)}',
+                    'Total gasto no mês: ${formatCurrency(totalSpent)}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -183,13 +179,9 @@ class _HomepageState extends State<Homepage> {
 
                   const SizedBox(height: 16),
                   SpendingLimitSection(
-                    controller: _limitController,
                     spendingLimit: spendingLimit,
                     totalSpent: totalSpent,
                     onChanged: (newLimit) {
-                      setState(() {
-                        spendingLimit = newLimit;
-                      });
                       _saveSpendingLimit(newLimit);
                     },
                   ),

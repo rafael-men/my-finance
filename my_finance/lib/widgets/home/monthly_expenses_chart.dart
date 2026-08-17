@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:my_finance/utils/date_formatters.dart';
 
 class MonthlyExpensesChart extends StatelessWidget {
   final Map<String, double> monthlyData;
@@ -103,7 +104,7 @@ class MonthlyExpensesChart extends StatelessWidget {
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 if (group.x < entries.length) {
                   return BarTooltipItem(
-                    '${entries[group.x].key}\nR\$ ${rod.toY.toStringAsFixed(2)}',
+                    '${entries[group.x].key}\n${formatCurrency(rod.toY)}',
                     const TextStyle(color: Colors.white, fontSize: 12),
                   );
                 }

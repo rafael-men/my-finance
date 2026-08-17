@@ -33,6 +33,7 @@ class SidebarItem extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 0),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: expanded
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
@@ -40,12 +41,15 @@ class SidebarItem extends StatelessWidget {
               Icon(icon, color: foreground),
               if (expanded) ...[
                 const SizedBox(width: 14),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: foreground,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                Expanded(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ],

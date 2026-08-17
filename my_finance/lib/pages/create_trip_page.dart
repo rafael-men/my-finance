@@ -5,6 +5,7 @@ import 'package:my_finance/data/currency_data.dart';
 import 'package:my_finance/models/currency.dart';
 import 'package:my_finance/utils/currencies.dart';
 import 'package:my_finance/utils/date_formatters.dart';
+import 'package:my_finance/utils/exceptions/exceptions.dart';
 
 class CreateTripPage extends StatefulWidget {
   const CreateTripPage({super.key});
@@ -18,6 +19,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final _destinationController = TextEditingController();
   String? _selectedCurrency;
   late Future<List<Currency>> _currenciesFuture;
+  bool _saving = false;
 
   final _notesController = TextEditingController();
   DateTime _startDate = DateTime.now();
@@ -60,10 +62,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   Future<void> _saveTrip() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _saving = true;
+    });
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
       final currency = _selectedCurrency ?? '';
       final newTrip = TripItem(
-        destination: _destinationController.text,
+        destination: _destinationController.text.trim(),
         currency: currency,
         startDate: _startDate,
         endDate: _endDate,
@@ -71,8 +81,30 @@ class _CreateTripPageState extends State<CreateTripPage> {
       );
 
       await _travelData.addTrip(newTrip);
+
       if (mounted) {
         Navigator.pop(context, true);
+      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Viagem criada com sucesso!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      final error = AppException.from(e, origin: 'CreateTripPage');
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Erro ao criar viagem: ${error.message}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }
@@ -82,7 +114,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nova Viagem'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 47, 9, 54),
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -95,9 +127,19 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 controller: _destinationController,
                 decoration: const InputDecoration(
                   labelText: 'Destino',
-                  prefixIcon: Icon(Icons.place),
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.place_outlined),
                 ),
-                validator: (value) => value!.isEmpty ? 'Informe o destino' : null,
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Informe o destino';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Destino deve ter pelo menos 2 caracteres';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               FutureBuilder<List<Currency>>(
@@ -108,15 +150,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     initialValue: _selectedCurrency,
                     decoration: const InputDecoration(
                       labelText: 'Moeda Local',
-                      prefixIcon: Icon(Icons.currency_exchange),
                       border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.currency_exchange),
                     ),
                     hint: const Text('Selecione a moeda'),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedCurrency = newValue;
-                      });
-                    },
+                    onChanged: _saving
+                        ? null
+                        : (String? newValue) {
+                            setState(() {
+                              _selectedCurrency = newValue;
+                            });
+                          },
                     validator: (value) =>
                         value == null || value.isEmpty ? 'Selecione a moeda' : null,
                     items: currencies.map<DropdownMenuItem<String>>(
@@ -132,7 +176,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.calendar_today),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.calendar_today,
+                  color: Color.fromARGB(255, 47, 9, 54),
+                ),
                 title: const Text('Data de Início'),
                 subtitle: Text(formatDate(_startDate)),
                 trailing: TextButton(
@@ -141,7 +189,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.calendar_today),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.calendar_today,
+                  color: Color.fromARGB(255, 47, 9, 54),
+                ),
                 title: const Text('Data de Término'),
                 subtitle: Text(formatDate(_endDate)),
                 trailing: TextButton(
@@ -154,20 +206,29 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 controller: _notesController,
                 decoration: const InputDecoration(
                   labelText: 'Observações (opcional)',
-                  prefixIcon: Icon(Icons.note),
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.note_outlined),
                 ),
                 maxLines: 3,
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _saveTrip,
+              ElevatedButton.icon(
+                onPressed: _saving ? null : _saveTrip,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check),
+                label: Text(_saving ? 'Salvando...' : 'Salvar Viagem'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: const Color.fromARGB(255, 47, 9, 54),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text(
-                  'Salvar Viagem',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ],

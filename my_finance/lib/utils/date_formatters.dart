@@ -30,3 +30,8 @@ String shortMonthName(int month) => kShortMonths[month - 1];
 String weekdayName(DateTime date) => kWeekdayNames[date.weekday - 1];
 
 String shortWeekdayName(DateTime date) => kShortWeekdayNames[date.weekday - 1];
+
+String formatCurrency(double value) {
+  final formatted = value.toStringAsFixed(2).replaceAll('.', ',');
+  return 'R\$ $formatted';
+}

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:my_finance/data/travel_data.dart';
 import 'package:my_finance/models/trip_item.dart';
 import 'package:my_finance/pages/add_travel_expense_page.dart';
+import 'package:my_finance/utils/currencies.dart';
+import 'package:my_finance/utils/date_formatters.dart';
 import 'package:my_finance/widgets/common/empty_state.dart';
+import 'package:my_finance/widgets/responsive_sidebar_scaffold.dart';
+import 'package:my_finance/widgets/sidebar.dart';
 import 'package:my_finance/widgets/trips/travel_expense_card.dart';
-import 'package:my_finance/widgets/trips/trip_total_card.dart';
 
 class TripDetailPage extends StatefulWidget {
   final TripItem trip;
@@ -32,66 +35,131 @@ class _TripDetailPageState extends State<TripDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.trip.destination),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
+    final trip = widget.trip;
+
+    return ResponsiveSidebarScaffold(
+      title: trip.destination,
+      destination: SidebarDestination.trips,
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToAddExpense(context),
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 47, 9, 54),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Novo gasto'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListenableBuilder(
-              listenable: travelData,
-              builder: (context, _) {
-                final total = travelData.getTotalExpensesForTrip(widget.tripId);
-                return TripTotalCard(
-                  currency: widget.trip.currency,
-                  total: total,
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Gastos da viagem:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListenableBuilder(
-                listenable: travelData,
-                builder: (context, _) {
-                  final expenses =
-                      travelData.getExpensesForTrip(widget.tripId);
+      body: ListenableBuilder(
+        listenable: travelData,
+        builder: (context, _) {
+          final total = travelData.getTotalExpensesForTrip(widget.tripId);
+          final expenses = travelData.getExpensesForTrip(widget.tripId);
 
-                  if (expenses.isEmpty) {
-                    return const EmptyState(
-                      icon: Icons.receipt_long_outlined,
-                      message: 'Nenhum gasto registrado ainda',
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: expenses.length,
-                    itemBuilder: (context, index) {
-                      return TravelExpenseCard(
-                        expense: expenses[index],
-                        currency: widget.trip.currency,
-                      );
-                    },
-                  );
-                },
+          return RefreshIndicator(
+            onRefresh: () async {
+              if (mounted) {
+                setState(() {});
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2F0936), Color(0xFF5A2E6F)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.flight, color: Colors.white70, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  trip.destination,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}',
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Total gasto: ${currencyCode(trip.currency)} ${total.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Gastos da viagem',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${expenses.length} ${expenses.length == 1 ? 'item' : 'itens'}',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (expenses.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: EmptyState(
+                          icon: Icons.receipt_long_outlined,
+                          message: 'Nenhum gasto registrado ainda.',
+                        ),
+                      )
+                    else
+                      ...expenses.map(
+                        (expense) => TravelExpenseCard(
+                          expense: expense,
+                          currency: trip.currency,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

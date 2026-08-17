@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_finance/data/expense_data.dart';
+import 'package:my_finance/data/settings_data.dart';
 import 'package:my_finance/models/expense_item.dart';
 import 'package:my_finance/models/purchase_category.dart';
 import 'package:my_finance/utils/date_formatters.dart';
@@ -81,6 +82,88 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
     }
   }
 
+  Future<void> _showLimitBlockedPopup(double currentTotal, double limit) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(
+          Icons.block,
+          color: Colors.red,
+          size: 48,
+        ),
+        title: const Text(
+          'Compras Bloqueadas',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Limite de gastos atingido!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Gasto atual: ${formatCurrency(currentTotal)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Limite definido: ${formatCurrency(limit)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Altere seu limite na tela inicial para continuar comprando.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 47, 9, 54),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -88,11 +171,30 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
     final parsedAmount = double.tryParse(normalizedAmount);
     if (parsedAmount == null || parsedAmount <= 0) return;
 
+    final spendingLimit = await SettingsData().getSpendingLimit();
+    if (spendingLimit > 0 && mounted) {
+      final now = DateTime.now();
+      final allExpenses = widget.expenseData.getAllExpenseList();
+      final currentMonthTotal = allExpenses
+          .where((e) => e.date.month == now.month && e.date.year == now.year)
+          .fold<double>(0, (total, e) => total + e.amount);
+
+      double newTotal;
+      if (_isEditing) {
+        newTotal = currentMonthTotal - widget.existing!.amount + parsedAmount;
+      } else {
+        newTotal = currentMonthTotal + parsedAmount;
+      }
+
+      if (newTotal > spendingLimit) {
+        await _showLimitBlockedPopup(currentMonthTotal, spendingLimit);
+        return;
+      }
+    }
+
     setState(() {
       _saving = true;
     });
-
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final expense = ExpenseItem(
@@ -107,6 +209,9 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
       } else {
         await widget.expenseData.addExpense(expense);
       }
+
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -247,7 +352,7 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(
                   Icons.calendar_today,
-                  color: Colors.deepPurple,
+                  color: Color.fromARGB(255, 47, 9, 54),
                 ),
                 title: const Text('Data da compra'),
                 subtitle: Text(formatDate(_selectedDate)),
