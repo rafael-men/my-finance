@@ -70,7 +70,12 @@ class _SpendingLimitSectionState extends State<SpendingLimitSection> {
               child: TextField(
                 controller: _controller,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                enabled: _isEditing,
+                enabled: true,
+                onTap: () {
+                  if (!_isEditing) {
+                    setState(() => _isEditing = true);
+                  }
+                },
                 inputFormatters: [
                   TextInputFormatter.withFunction((oldValue, newValue) {
                     var text = newValue.text.replaceAll('.', ',');

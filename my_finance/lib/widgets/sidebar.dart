@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:my_finance/pages/compras_page.dart';
 import 'package:my_finance/pages/homepage.dart';
 import 'package:my_finance/pages/trips_page.dart';
+import 'package:my_finance/services/auth_service.dart';
 import 'package:my_finance/utils/SidebarItem.dart';
+import 'package:my_finance/widgets/edit_profile_dialog.dart';
 
 enum SidebarDestination { home, compras, trips }
 
@@ -32,6 +34,104 @@ class Sidebar extends StatelessWidget {
           color: Colors.white,
         ),
       );
+
+  Widget _buildProfileAvatar(BuildContext context) {
+    final authService = AuthService.getShared();
+    final user = authService.appUser;
+    final displayName = user?.name ?? '';
+    final initials = displayName.isNotEmpty
+        ? displayName
+            .trim()
+            .split(' ')
+            .map((w) => w[0])
+            .take(2)
+            .join()
+            .toUpperCase()
+        : '';
+
+    return PopupMenuButton<String>(
+      offset: Offset(expanded ? 0 : 10, 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user?.name ?? 'Usuário',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                user?.email ?? '',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'edit_profile',
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined, size: 20, color: Color.fromARGB(255, 47, 9, 54)),
+              SizedBox(width: 8),
+              Text('Editar perfil'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout, size: 20, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Sair', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        if (value == 'logout') {
+          authService.signOut();
+        } else if (value == 'edit_profile') {
+          showEditProfileDialog(context);
+        }
+      },
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          shape: BoxShape.circle,
+        ),
+        child: initials.isNotEmpty
+            ? Center(
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+            : const Icon(
+                Icons.person_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +173,9 @@ class Sidebar extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (showToggle)
+                        _buildProfileAvatar(context),
+                        if (showToggle) ...[
+                          const SizedBox(width: 4),
                           IconButton(
                             onPressed: onToggleExpanded,
                             icon: const Icon(
@@ -81,11 +183,14 @@ class Sidebar extends StatelessWidget {
                               color: Colors.white,
                             ),
                           ),
+                        ],
                       ],
                     )
                   : Column(
                       children: [
                         _logo,
+                        const SizedBox(height: 12),
+                        _buildProfileAvatar(context),
                         if (showToggle) ...[
                           const SizedBox(height: 8),
                           IconButton(

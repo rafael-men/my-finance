@@ -1,0 +1,37 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+
+class AppUser {
+  final String uid;
+  final String name;
+  final String email;
+
+  const AppUser({
+    required this.uid,
+    required this.name,
+    required this.email,
+  });
+
+  factory AppUser.fromFirebase(fb.User user, {String? name}) {
+    return AppUser(
+      uid: user.uid,
+      name: name ?? user.displayName ?? '',
+      email: user.email ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'name': name,
+      'email': email,
+    };
+  }
+
+  factory AppUser.fromMap(Map<String, dynamic> map) {
+    return AppUser(
+      uid: map['uid'] ?? '',
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+    );
+  }
+}

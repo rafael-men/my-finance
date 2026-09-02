@@ -1,11 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:my_finance/data/travel_data.dart';
 import 'package:my_finance/config/firebase_env_options.dart';
-import 'package:my_finance/pages/homepage.dart';
 import 'package:my_finance/pages/trips_page.dart';
-import 'package:my_finance/utils/exceptions/exceptions.dart';
+import 'package:my_finance/widgets/auth_wrapper.dart';
+
+const bool _kUseEmulators = bool.fromEnvironment('USE_FIREBASE_EMULATORS');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,13 +14,17 @@ void main() async {
   try {
     FirebaseEnvOptions.validateOrThrow();
     await Firebase.initializeApp(options: FirebaseEnvOptions.currentPlatform);
-    await FirebaseAuth.instance.signInAnonymously();
-    await TravelData().init();
+
+    if (_kUseEmulators) {
+      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+      FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+      debugPrint('Usando Firebase Emulators (auth:9099, firestore:8080).');
+    }
 
     runApp(const MyApp());
-  } catch (e) {
-    final error = AppException.from(e, origin: 'main');
-    debugPrint('Erro na inicialização: $error');
+  } catch (e, stackTrace) {
+    debugPrint('Erro na inicialização: $e');
+    debugPrint('Stack trace: $stackTrace');
     runApp(
       MaterialApp(
         home: Scaffold(
@@ -42,7 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const Homepage(),
+      home: const AuthWrapper(),
       routes: {'/trips': (context) => const TripsPage()},
     );
   }

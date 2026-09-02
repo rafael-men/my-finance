@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_finance/data/expense_data.dart';
 import 'package:my_finance/data/settings_data.dart';
 import 'package:my_finance/models/expense_item.dart';
+import 'package:my_finance/services/auth_service.dart';
 import 'package:my_finance/utils/date_formatters.dart';
 import 'package:my_finance/utils/exceptions/exceptions.dart';
 import 'package:my_finance/widgets/home/home_expenses_list.dart';
@@ -155,9 +156,18 @@ class _HomepageState extends State<Homepage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Olá, seja bem-vindo!',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ListenableBuilder(
+                    listenable: AuthService.getShared(),
+                    builder: (context, _) {
+                      final name = AuthService.getShared().appUser?.name ?? 'Usuário';
+                      return Text(
+                        'Olá, $name!',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 8),

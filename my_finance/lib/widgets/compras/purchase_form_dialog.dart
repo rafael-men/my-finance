@@ -11,12 +11,14 @@ Future<void> showPurchaseFormDialog(
   BuildContext context,
   ExpenseData expenseData, {
   ExpenseItem? existing,
+  SettingsData? settingsData,
 }) async {
   await showDialog<void>(
     context: context,
     builder: (_) => _PurchaseFormDialog(
       expenseData: expenseData,
       existing: existing,
+      settingsData: settingsData,
     ),
   );
 }
@@ -24,10 +26,12 @@ Future<void> showPurchaseFormDialog(
 class _PurchaseFormDialog extends StatefulWidget {
   final ExpenseData expenseData;
   final ExpenseItem? existing;
+  final SettingsData? settingsData;
 
   const _PurchaseFormDialog({
     required this.expenseData,
     this.existing,
+    this.settingsData,
   });
 
   @override
@@ -171,7 +175,8 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
     final parsedAmount = double.tryParse(normalizedAmount);
     if (parsedAmount == null || parsedAmount <= 0) return;
 
-    final spendingLimit = await SettingsData().getSpendingLimit();
+    final settings = widget.settingsData ?? SettingsData();
+    final spendingLimit = await settings.getSpendingLimit();
     if (spendingLimit > 0 && mounted) {
       final now = DateTime.now();
       final allExpenses = widget.expenseData.getAllExpenseList();

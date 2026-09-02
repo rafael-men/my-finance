@@ -25,6 +25,6 @@ void main() {
 
     expect(find.text('Arroz'), findsOneWidget);
     expect(find.text('Alimentação'), findsOneWidget);
-    expect(find.text('R\$ 10.00'), findsOneWidget);
+    expect(find.text('R\$ 10,00'), findsOneWidget);
   });
 }

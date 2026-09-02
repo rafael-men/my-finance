@@ -111,7 +111,7 @@ void main() {
 
       expect(find.text('Feira do mês'), findsOneWidget);
       expect(find.text('Alimentação'), findsOneWidget);
-      expect(find.text('R\$ 34.99'), findsOneWidget);
+      expect(find.text('R\$ 34,99'), findsOneWidget);
     });
 
     testWidgets('não exibe ações por padrão', (tester) async {
@@ -123,11 +123,10 @@ void main() {
         ),
       );
 
-      expect(find.byTooltip('Editar compra'), findsNothing);
-      expect(find.byTooltip('Excluir compra'), findsNothing);
+      expect(find.byIcon(Icons.more_vert), findsNothing);
     });
 
-    testWidgets('exibe ações de editar e excluir com showActions',
+    testWidgets('exibe menu de editar e excluir com showActions',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -140,11 +139,16 @@ void main() {
         ),
       );
 
-      expect(find.byTooltip('Editar compra'), findsOneWidget);
-      expect(find.byTooltip('Excluir compra'), findsOneWidget);
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Editar'), findsOneWidget);
+      expect(find.text('Excluir'), findsOneWidget);
     });
 
-    testWidgets('dispara onEdit e onDelete', (tester) async {
+    testWidgets('dispara onEdit e onDelete pelo menu', (tester) async {
       var editCalls = 0;
       var deleteCalls = 0;
       await tester.pumpWidget(
@@ -160,11 +164,17 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byTooltip('Editar compra'));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
       expect(editCalls, 1);
       expect(deleteCalls, 0);
 
-      await tester.tap(find.byTooltip('Excluir compra'));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Excluir'));
+      await tester.pumpAndSettle();
       expect(editCalls, 1);
       expect(deleteCalls, 1);
     });

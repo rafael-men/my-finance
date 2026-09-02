@@ -31,6 +31,12 @@ class _ResponsiveSidebarScaffoldState extends State<ResponsiveSidebarScaffold> {
 
   bool get _isDesktop => MediaQuery.sizeOf(context).width >= _desktopBreakpoint;
 
+  List<Widget> get _mobileActions {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 360 || widget.actions.isEmpty) return const [];
+    return widget.actions;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isDesktop) {
@@ -58,12 +64,16 @@ class _ResponsiveSidebarScaffoldState extends State<ResponsiveSidebarScaffold> {
                       padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
                       child: Row(
                         children: [
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: Color.fromARGB(255, 47, 9, 54),
+                          Flexible(
+                            child: Text(
+                              widget.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Color.fromARGB(255, 47, 9, 54),
+                              ),
                             ),
                           ),
                           const Spacer(),
@@ -84,10 +94,14 @@ class _ResponsiveSidebarScaffoldState extends State<ResponsiveSidebarScaffold> {
     return Scaffold(
       backgroundColor: widget.backgroundColor,
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: const Color.fromARGB(255, 47, 9, 54),
         foregroundColor: Colors.white,
-        actions: widget.actions,
+        actions: _mobileActions,
       ),
       drawer: Drawer(
         child: Sidebar(
