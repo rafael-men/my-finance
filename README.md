@@ -200,25 +200,3 @@ A suíte inclui testes de widget para o seletor de mês, a lista de compras e o 
 
 ---
 
-## Observações de segurança
-
-- **Nunca** commite `env.json`, `google-services.json` e `GoogleService-Info.plist` (já estão no `.gitignore`).
-- Restrinja o uso das API keys no Google Cloud (Android package + SHA-1, iOS bundle e domínio web).
-- Mantenha as regras de segurança do Firestore bem fechadas, permitindo acesso apenas aos dados do próprio usuário autenticado.
-
----
-
-## Deploy Web (Firebase Hosting)
-
-```bash
-flutter build web --dart-define-from-file=env.json
-firebase deploy --only hosting
-```
-
----
-
-## Próximos passos sugeridos
-
-- Substituir a autenticação anônima por login com e-mail/senha ou provedores.
-- Adicionar edição e exclusão de gastos de viagem.
-- Incluir conversão de moedas nos totais de viagem.
