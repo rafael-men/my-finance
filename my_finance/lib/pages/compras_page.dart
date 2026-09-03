@@ -5,6 +5,7 @@ import 'package:my_finance/utils/date_formatters.dart';
 import 'package:my_finance/utils/exceptions/exceptions.dart';
 import 'package:my_finance/widgets/common/confirm_dialog.dart';
 import 'package:my_finance/widgets/common/empty_state.dart';
+import 'package:my_finance/widgets/compras/filter-expenses.dart';
 import 'package:my_finance/widgets/compras/purchase_form_dialog.dart';
 import 'package:my_finance/widgets/compras/purchase_month_selector.dart';
 import 'package:my_finance/widgets/compras/purchase_list_tile.dart';
@@ -23,6 +24,7 @@ class _ComprasPageState extends State<ComprasPage> {
   String? _initError;
   ExpenseData? _expenseData;
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  PurchaseFilter _filter = const PurchaseFilter();
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _ComprasPageState extends State<ComprasPage> {
     }
     setState(() {
       _selectedMonth = next;
+      _filter = const PurchaseFilter();
     });
   }
 
@@ -74,6 +77,25 @@ class _ComprasPageState extends State<ComprasPage> {
       _selectedMonth.month,
       _selectedMonth.year,
     );
+  }
+
+  List<ExpenseItem> _getFilteredPurchasesOfMonth() {
+    final purchases = _getPurchasesOfMonth();
+    if (!_filter.isActive) return purchases;
+    return purchases.where(_filter.matches).toList();
+  }
+
+  Future<void> _openFilter() async {
+    final result = await showFilterExpensesDialog(
+      context,
+      current: _filter,
+      purchases: _getPurchasesOfMonth(),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _filter = result;
+      });
+    }
   }
 
   double _totalOfMonth() {
@@ -121,17 +143,34 @@ class _ComprasPageState extends State<ComprasPage> {
     return ResponsiveSidebarScaffold(
       title: 'Minhas Compras',
       destination: SidebarDestination.compras,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showPurchaseFormDialog(context, _expenseData!),
-        backgroundColor: const Color.fromARGB(255, 47, 9, 54),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Nova compra'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'filter',
+            onPressed: _openFilter,
+            backgroundColor: const Color.fromARGB(255, 47, 9, 54),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.filter_alt_outlined),
+            label: const Text('Filtrar'),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton.extended(
+            heroTag: 'add',
+            onPressed: () => showPurchaseFormDialog(context, _expenseData!),
+            backgroundColor: const Color.fromARGB(255, 47, 9, 54),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add),
+            label: const Text('Nova compra'),
+          ),
+        ],
       ),
       body: ListenableBuilder(
         listenable: _expenseData!,
         builder: (context, _) {
-          final purchases = _getPurchasesOfMonth();
+          final purchases = _getFilteredPurchasesOfMonth();
+          final allPurchases = _getPurchasesOfMonth();
           final total = _totalOfMonth();
           return RefreshIndicator(
             onRefresh: () async {
@@ -146,38 +185,12 @@ class _ComprasPageState extends State<ComprasPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2F0936), Color(0xFF5A2E6F)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Bem Vindo, Usuário',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Total gasto no mês: ${formatCurrency(total)}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      'Total gasto no mês: ${formatCurrency(total)}',
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 53, 41, 72),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -188,6 +201,10 @@ class _ComprasPageState extends State<ComprasPage> {
                       onNext: () => _changeMonth(1),
                     ),
                     const SizedBox(height: 16),
+                    if (_filter.isActive) ...[
+                      _FilterIndicator(filter: _filter),
+                      const SizedBox(height: 12),
+                    ],
                     Row(
                       children: [
                         Expanded(
@@ -211,11 +228,13 @@ class _ComprasPageState extends State<ComprasPage> {
                     ),
                     const SizedBox(height: 10),
                     if (purchases.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 20),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
                         child: EmptyState(
                           icon: Icons.shopping_cart_outlined,
-                          message: 'Nenhuma compra neste mês.',
+                          message: allPurchases.isEmpty
+                              ? 'Nenhuma compra neste mês.'
+                              : 'Nenhuma compra corresponde ao filtro aplicado.',
                         ),
                       )
                     else
@@ -237,6 +256,58 @@ class _ComprasPageState extends State<ComprasPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _FilterIndicator extends StatelessWidget {
+  final PurchaseFilter filter;
+
+  const _FilterIndicator({required this.filter});
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <String>[];
+    if (filter.categories.isNotEmpty) {
+      parts.add(
+        filter.categories.map((c) => c.label).toList().join(' / '),
+      );
+    }
+    if (filter.minAmount != null && filter.maxAmount != null) {
+      parts.add(
+        '${formatCurrency(filter.minAmount!)} - '
+        '${formatCurrency(filter.maxAmount!)}',
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 47, 9, 54).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.filter_alt,
+            size: 18,
+            color: Color.fromARGB(255, 47, 9, 54),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Filtro: ${parts.join('  ·  ')}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color.fromARGB(255, 47, 9, 54),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

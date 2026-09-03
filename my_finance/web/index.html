@@ -13,6 +13,30 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Mitigation for Flutter web on-screen keyboard inset bug on Android Chrome
+    // (https://github.com/flutter/flutter/issues/175074).
+    // When the virtual keyboard is dismissed, force the browser scroll back to
+    // top and blur any focused input so the engine does not compute negative
+    // viewInsets, which otherwise throws:
+    //   "ViewInsets cannot be negative ... keyboard is being dismissed."
+    (function () {
+      if (!window.visualViewport) return;
+      var lastHeight = window.visualViewport.height;
+      window.visualViewport.addEventListener('resize', function () {
+        var currentHeight = window.visualViewport.height;
+        if (currentHeight > lastHeight + 100) {
+          window.scrollTo(0, 0);
+          var active = document.activeElement;
+          if (active &&
+              (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+            active.blur();
+          }
+        }
+        lastHeight = currentHeight;
+      });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

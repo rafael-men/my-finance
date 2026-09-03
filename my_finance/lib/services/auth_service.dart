@@ -101,11 +101,19 @@ class AuthService extends ChangeNotifier {
     await firebaseUser.updateDisplayName(name);
 
     final current = _appUser ?? AppUser.fromFirebase(firebaseUser);
-    final updated = AppUser(
-      uid: current.uid,
-      name: name,
-      email: current.email,
-    );
+    final updated = current.copyWith(name: name);
+
+    await _userStore.saveUser(updated);
+    _appUser = updated;
+    notifyListeners();
+  }
+
+  Future<void> updateProfilePhoto(String photoBase64) async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return;
+
+    final current = _appUser ?? AppUser.fromFirebase(firebaseUser);
+    final updated = current.copyWith(photoBase64: photoBase64);
 
     await _userStore.saveUser(updated);
     _appUser = updated;

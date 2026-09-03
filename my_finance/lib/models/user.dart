@@ -4,11 +4,13 @@ class AppUser {
   final String uid;
   final String name;
   final String email;
+  final String photoBase64;
 
   const AppUser({
     required this.uid,
     required this.name,
     required this.email,
+    this.photoBase64 = '',
   });
 
   factory AppUser.fromFirebase(fb.User user, {String? name}) {
@@ -19,11 +21,24 @@ class AppUser {
     );
   }
 
+  AppUser copyWith({
+    String? name,
+    String? photoBase64,
+  }) {
+    return AppUser(
+      uid: uid,
+      name: name ?? this.name,
+      email: email,
+      photoBase64: photoBase64 ?? this.photoBase64,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
       'name': name,
       'email': email,
+      'photoBase64': photoBase64,
     };
   }
 
@@ -32,6 +47,7 @@ class AppUser {
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
+      photoBase64: map['photoBase64'] ?? '',
     );
   }
 }

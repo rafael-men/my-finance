@@ -124,6 +124,16 @@ class _LoginPageState extends State<LoginPage> {
                 return null;
               },
             ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: const Text(
+                'Esqueceu a senha?',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 61, 12, 94),
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             AuthSubmitButton(
               label: 'Entrar',
