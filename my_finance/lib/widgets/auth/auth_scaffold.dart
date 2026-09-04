@@ -14,8 +14,8 @@ class AuthScaffold extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color.fromARGB(255, 47, 9, 54),
-              Color.fromARGB(255, 90, 30, 100),
+              const Color.fromARGB(255, 47, 9, 54),
+              const Color.fromARGB(255, 167, 102, 255),
             ],
           ),
         ),

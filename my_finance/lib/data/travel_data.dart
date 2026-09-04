@@ -101,6 +101,20 @@ class TravelData extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateExpense(TravelExpense expense) async {
+    if (expense.id.isNotEmpty) {
+      await _expenseRef.doc(expense.id).update(expense.toMap());
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteExpense(TravelExpense expense) async {
+    if (expense.id.isNotEmpty) {
+      await _expenseRef.doc(expense.id).delete();
+      notifyListeners();
+    }
+  }
+
   List<TravelExpense> getExpensesForTrip(String tripId) {
     return _expenses.where((e) => e.tripId == tripId).toList();
   }

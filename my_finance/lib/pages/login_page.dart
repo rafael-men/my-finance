@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:my_finance/pages/forgot_password_page.dart';
 import 'package:my_finance/pages/register_page.dart';
 import 'package:my_finance/services/auth_service.dart';
 import 'package:my_finance/widgets/auth/auth_header.dart';
@@ -126,11 +127,20 @@ class _LoginPageState extends State<LoginPage> {
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: const Text(
-                'Esqueceu a senha?',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 61, 12, 94),
-                  decoration: TextDecoration.none,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordPage(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Esqueceu a senha?',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 61, 12, 94),
+                  ),
                 ),
               ),
             ),

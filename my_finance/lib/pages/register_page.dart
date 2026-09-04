@@ -2,11 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_finance/pages/login_page.dart';
 import 'package:my_finance/services/auth_service.dart';
+import 'package:my_finance/utils/password_strength.dart';
 import 'package:my_finance/widgets/auth/auth_header.dart';
 import 'package:my_finance/widgets/auth/auth_link.dart';
 import 'package:my_finance/widgets/auth/auth_scaffold.dart';
 import 'package:my_finance/widgets/auth/auth_submit_button.dart';
 import 'package:my_finance/widgets/auth/auth_text_field.dart';
+import 'package:my_finance/widgets/auth/password_strength_bar.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthService? authService;
@@ -29,7 +31,18 @@ class _RegisterPageState extends State<RegisterPage> {
       widget.authService ?? AuthService.getShared();
 
   @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() {
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _passwordController.removeListener(_onPasswordChanged);
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -139,7 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Informe o email';
-                if (!value.contains('@')) return 'Email inválido';
+                if (!_isValidEmail(value)) return 'Email inválido';
                 return null;
               },
             ),
@@ -149,8 +162,12 @@ class _RegisterPageState extends State<RegisterPage> {
               label: 'Senha',
               icon: Icons.lock_outline,
               isPassword: true,
-              validator: _validatePassword,
+              validator: validateStrongPassword,
             ),
+            if (_passwordController.text.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              PasswordStrengthBar(password: _passwordController.text),
+            ],
             const SizedBox(height: 16),
             AuthTextField(
               controller: _confirmPasswordController,
@@ -183,18 +200,8 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) return 'Informe a senha';
-    if (value.length < 6) return 'A senha deve ter pelo menos 6 caracteres';
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
-      return 'A senha deve ter pelo menos 1 letra maiúscula';
-    }
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
-      return 'A senha deve ter pelo menos 1 número';
-    }
-    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) {
-      return 'A senha deve ter pelo menos 1 caractere especial';
-    }
-    return null;
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(email.trim());
   }
 }

@@ -36,6 +36,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestableWidget(const RegisterPage()));
 
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -50,6 +51,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Nome'),
         'A',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -67,6 +69,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Nome'),
         'Rafael',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -85,10 +88,88 @@ void main() {
         find.widgetWithText(TextFormField, 'Email'),
         'email_invalido',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
       expect(find.text('Email inválido'), findsOneWidget);
+    });
+
+    testWidgets('deve mostrar erro se email não tiver domínio',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael@teste',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(find.text('Email inválido'), findsOneWidget);
+    });
+
+    testWidgets('deve mostrar erro se email tiver domínio sem ponto',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael@testecom',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(find.text('Email inválido'), findsOneWidget);
+    });
+
+    testWidgets('deve mostrar erro se email tiver espaços',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael @teste.com',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(find.text('Email inválido'), findsOneWidget);
+    });
+
+    testWidgets('deve aceitar email em formato correto apenas depois do @',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael@teste.com',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(find.text('Email inválido'), findsNothing);
+      expect(find.text('Informe o email'), findsNothing);
     });
 
     testWidgets('deve mostrar erro se senha estiver vazia',
@@ -103,13 +184,14 @@ void main() {
         find.widgetWithText(TextFormField, 'Email'),
         'rafael@teste.com',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
       expect(find.text('Informe a senha'), findsOneWidget);
     });
 
-    testWidgets('deve mostrar erro se senha tiver menos de 6 caracteres',
+    testWidgets('deve mostrar erro se senha tiver menos de 8 caracteres',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestableWidget(const RegisterPage()));
 
@@ -125,11 +207,12 @@ void main() {
         find.widgetWithText(TextFormField, 'Senha'),
         '123',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
       expect(
-        find.text('A senha deve ter pelo menos 6 caracteres'),
+        find.text('A senha deve ter pelo menos 8 caracteres'),
         findsOneWidget,
       );
     });
@@ -150,6 +233,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Senha'),
         'senha@123',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -175,6 +259,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Senha'),
         'Senha@abc',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -200,6 +285,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Senha'),
         'Senha123',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -225,6 +311,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Senha'),
         'Senha@123',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -251,6 +338,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Confirmar senha'),
         'Senha@456',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -277,6 +365,7 @@ void main() {
         find.widgetWithText(TextFormField, 'Confirmar senha'),
         'Senha@123',
       );
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 
@@ -285,7 +374,11 @@ void main() {
       expect(find.text('Informe a senha'), findsNothing);
       expect(find.text('Confirme a senha'), findsNothing);
       expect(
-        find.text('A senha deve ter pelo menos 6 caracteres'),
+        find.text('A senha deve ter pelo menos 8 caracteres'),
+        findsNothing,
+      );
+      expect(
+        find.text('A senha deve ter pelo menos 1 letra minúscula'),
         findsNothing,
       );
       expect(
@@ -339,6 +432,135 @@ void main() {
       expect(isObscured(), isFalse);
     });
 
+    testWidgets('deve mostrar erro se senha não tiver letra minúscula',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael@teste.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Senha'),
+        'SENHA@123',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(
+        find.text('A senha deve ter pelo menos 1 letra minúscula'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('deve rejeitar senha média (só autoriza senha forte)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nome'),
+        'Rafael',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'rafael@teste.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Senha'),
+        'Senha123',
+      );
+      await tester.ensureVisible(find.text('Criar conta'));
+      await tester.tap(find.text('Criar conta'));
+      await tester.pump();
+
+      expect(
+        find.text('A senha deve ter pelo menos 1 caractere especial'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('não deve exibir barra de força com senha vazia',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      expect(
+        find.text('Senha fraca'),
+        findsNothing,
+      );
+      expect(
+        find.text('Senha média'),
+        findsNothing,
+      );
+      expect(
+        find.text('Senha forte'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('deve exibir barra "Senha fraca" para senha de 3 caracteres',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Senha'),
+        'abc',
+      );
+      await tester.pump();
+
+      expect(find.text('Senha fraca'), findsOneWidget);
+    });
+
+    testWidgets('deve exibir barra "Senha média" para senha de 6 caracteres',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Senha'),
+        'senha1',
+      );
+      await tester.pump();
+
+      expect(find.text('Senha média'), findsOneWidget);
+    });
+
+    testWidgets('deve exibir barra "Senha forte" para senha com todos critérios',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Senha'),
+        'Senha@123',
+      );
+      await tester.pump();
+
+      expect(find.text('Senha forte'), findsOneWidget);
+    });
+
+    testWidgets('deve atualizar a barra enquanto a senha é digitada',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestableWidget(const RegisterPage()));
+
+      final passwordField =
+          find.widgetWithText(TextFormField, 'Senha');
+
+      await tester.enterText(passwordField, 'abc');
+      await tester.pump();
+      expect(find.text('Senha fraca'), findsOneWidget);
+
+      await tester.enterText(passwordField, 'senha1');
+      await tester.pump();
+      expect(find.text('Senha média'), findsOneWidget);
+
+      await tester.enterText(passwordField, 'Senha@123');
+      await tester.pump();
+      expect(find.text('Senha forte'), findsOneWidget);
+    });
+
     testWidgets('deve navegar para LoginPage ao tocar em "Fazer login"',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestableWidget(const RegisterPage()));
@@ -388,6 +610,7 @@ void main() {
         'Senha@123',
       );
 
+      await tester.ensureVisible(find.text('Criar conta'));
       await tester.tap(find.text('Criar conta'));
       await tester.pump();
 

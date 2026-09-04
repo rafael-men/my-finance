@@ -33,7 +33,7 @@ class SidebarItem extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 0),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: expanded
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,

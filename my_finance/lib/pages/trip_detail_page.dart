@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/models/travel_expense.dart';
 import 'package:my_finance/models/trip_item.dart';
 import 'package:my_finance/pages/add_travel_expense_page.dart';
 import 'package:my_finance/utils/currencies.dart';
 import 'package:my_finance/utils/date_formatters.dart';
+import 'package:my_finance/widgets/common/confirm_dialog.dart';
 import 'package:my_finance/widgets/common/empty_state.dart';
 import 'package:my_finance/widgets/responsive_sidebar_scaffold.dart';
 import 'package:my_finance/widgets/sidebar.dart';
@@ -152,6 +154,9 @@ class _TripDetailPageState extends State<TripDetailPage> {
                         (expense) => TravelExpenseCard(
                           expense: expense,
                           currency: trip.currency,
+                          onEdit: () =>
+                              _navigateToAddExpense(context, expense: expense),
+                          onDelete: () => _deleteExpense(expense),
                         ),
                       ),
                   ],
@@ -164,13 +169,32 @@ class _TripDetailPageState extends State<TripDetailPage> {
     );
   }
 
-  void _navigateToAddExpense(BuildContext context) async {
+  void _navigateToAddExpense(
+    BuildContext context, {
+    TravelExpense? expense,
+  }) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddTravelExpensePage(tripId: widget.tripId),
+        builder: (context) => AddTravelExpensePage(
+          tripId: widget.tripId,
+          currency: widget.trip.currency,
+          expense: expense,
+        ),
       ),
     );
     setState(() {});
+  }
+
+  Future<void> _deleteExpense(TravelExpense expense) async {
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Confirmar exclusão',
+      message: 'Tem certeza que deseja excluir o gasto "${expense.description}"?',
+    );
+
+    if (confirm) {
+      await travelData.deleteExpense(expense);
+    }
   }
 }

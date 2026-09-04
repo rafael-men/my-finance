@@ -6,11 +6,15 @@ import 'package:my_finance/utils/date_formatters.dart';
 class TravelExpenseCard extends StatelessWidget {
   final TravelExpense expense;
   final String currency;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const TravelExpenseCard({
     super.key,
     required this.expense,
     required this.currency,
+    this.onEdit,
+    this.onDelete,
   });
 
   IconData _categoryIcon(String category) {
@@ -103,13 +107,49 @@ class TravelExpenseCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              '${currencyCode(currency)} ${expense.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: Color.fromARGB(255, 47, 9, 54),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${currencyCode(currency)} ${expense.amount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: Color.fromARGB(255, 47, 9, 54),
+                  ),
+                ),
+                if (onEdit != null || onDelete != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onEdit != null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          iconSize: 18,
+                          color: Colors.grey.shade600,
+                          tooltip: 'Editar',
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: onEdit,
+                        ),
+                      if (onDelete != null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          iconSize: 18,
+                          color: Colors.red.shade400,
+                          tooltip: 'Excluir',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: onDelete,
+                        ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ],
         ),

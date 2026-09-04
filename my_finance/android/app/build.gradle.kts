@@ -37,3 +37,15 @@ android {
 flutter {
     source = "../.."
 }
+
+base {
+    archivesName.set("My Finance")
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("My Finance.apk")
+        }
+    }
+}

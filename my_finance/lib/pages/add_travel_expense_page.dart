@@ -1,14 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_finance/models/travel_expense.dart';
 import 'package:my_finance/data/travel_data.dart';
+import 'package:my_finance/services/exchange_rate_service.dart';
+import 'package:my_finance/utils/currencies.dart';
 import 'package:my_finance/utils/date_formatters.dart';
 import 'package:my_finance/utils/exceptions/exceptions.dart';
 
 class AddTravelExpensePage extends StatefulWidget {
   final String tripId;
+  final String currency;
+  final TravelExpense? expense;
+  final TravelData? travelData;
+  final ExchangeRateService? exchangeRateService;
 
-  const AddTravelExpensePage({super.key, required this.tripId});
+  const AddTravelExpensePage({
+    super.key,
+    required this.tripId,
+    this.currency = 'BRL',
+    this.expense,
+    this.travelData,
+    this.exchangeRateService,
+  });
 
   @override
   State<AddTravelExpensePage> createState() => _AddTravelExpensePageState();
@@ -20,8 +35,14 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
   final _amountController = TextEditingController();
   String _selectedCategory = 'Alimentação';
   DateTime _selectedDate = DateTime.now();
-  final TravelData _travelData = TravelData();
+  late final TravelData _travelData = widget.travelData ?? TravelData();
+  late final ExchangeRateService _exchangeRateService =
+      widget.exchangeRateService ?? ExchangeRateService();
+  double? _rate;
+  bool _rateLoading = false;
   bool _saving = false;
+
+  bool get _isEditing => widget.expense != null;
 
   static const List<Map<String, dynamic>> _categories = [
     {'label': 'Alimentação', 'icon': Icons.restaurant_outlined, 'color': Color(0xFF2E7D32)},
@@ -35,7 +56,48 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
   @override
   void initState() {
     super.initState();
+    final existing = widget.expense;
+    if (existing != null) {
+      _descriptionController.text = existing.description;
+      _amountController.text =
+          existing.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _selectedCategory =
+          existing.category.isEmpty ? 'Alimentação' : existing.category;
+      _selectedDate = existing.date;
+    }
     _travelData.init();
+    if (widget.currency != 'BRL') {
+      _rateLoading = true;
+      unawaited(_loadRate());
+    }
+  }
+
+  Future<void> _loadRate() async {
+    final rate = await _exchangeRateService.fetchRateBid(widget.currency);
+    if (!mounted) return;
+    setState(() {
+      _rate = rate;
+      _rateLoading = false;
+    });
+  }
+
+  Future<void> _retryLoadRate() async {
+    setState(() {
+      _rateLoading = true;
+      _rate = null;
+    });
+    await _loadRate();
+  }
+
+  double? _brlEstimate() {
+    final normalizedAmount = _amountController.text.trim().replaceAll(',', '.');
+    final amount = double.tryParse(normalizedAmount);
+    if (amount == null || amount <= 0 || _rate == null) return null;
+    return amount * _rate!;
+  }
+
+  String _formatBRL(double value) {
+    return '≈ R\$ ${value.toStringAsFixed(2).replaceFirst('.', ',')}';
   }
 
   @override
@@ -81,7 +143,8 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final newExpense = TravelExpense(
+      final expense = TravelExpense(
+        id: _isEditing ? widget.expense!.id : '',
         tripId: widget.tripId,
         description: _descriptionController.text.trim(),
         amount: amount,
@@ -89,16 +152,24 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
         category: _selectedCategory,
       );
 
-      await _travelData.addExpense(newExpense);
+      if (_isEditing) {
+        await _travelData.updateExpense(expense);
+      } else {
+        await _travelData.addExpense(expense);
+      }
 
       if (mounted) {
         Navigator.pop(context);
       }
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Gasto registrado com sucesso!'),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? 'Gasto atualizado com sucesso!'
+                : 'Gasto registrado com sucesso!',
+          ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
@@ -122,7 +193,7 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Adicionar Gasto'),
+        title: Text(_isEditing ? 'Editar Gasto' : 'Adicionar Gasto'),
         backgroundColor: const Color.fromARGB(255, 47, 9, 54),
         foregroundColor: Colors.white,
       ),
@@ -158,16 +229,19 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Valor',
-                  border: OutlineInputBorder(),
-                  prefixText: 'R\$ ',
-                  prefixIcon: Icon(Icons.attach_money),
+                  border: const OutlineInputBorder(),
+                  prefixText: '${currencyCode(widget.currency)} ',
+                  prefixIcon: const Icon(Icons.attach_money),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.done,
+                onChanged: (_) {
+                  setState(() {});
+                },
                 inputFormatters: [
                   TextInputFormatter.withFunction(
                     (oldValue, newValue) {
@@ -200,6 +274,43 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
                   return null;
                 },
               ),
+              if (widget.currency != 'BRL') ...[
+                const SizedBox(height: 8),
+                if (_rateLoading)
+                  Text(
+                    'Buscando cotação...',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  )
+                else if (_rate != null) ...[
+                  Text(
+                    '1 ${currencyCode(widget.currency)} ≈ R\$ '
+                    '${_rate!.toStringAsFixed(2).replaceFirst('.', ',')}',
+                    style:
+                        TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                  if (_brlEstimate() != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatBRL(_brlEstimate()!),
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 47, 9, 54),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ] else
+                  InkWell(
+                    onTap: _retryLoadRate,
+                    child: Text(
+                      'Cotação indisponível. Toque para tentar novamente.',
+                      style: TextStyle(
+                        color: Colors.red.shade400,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+              ],
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: _selectedCategory,
@@ -262,7 +373,11 @@ class _AddTravelExpensePageState extends State<AddTravelExpensePage> {
                         ),
                       )
                     : const Icon(Icons.check),
-                label: Text(_saving ? 'Salvando...' : 'Salvar Gasto'),
+                label: Text(
+                  _saving
+                      ? 'Salvando...'
+                      : (_isEditing ? 'Salvar Alterações' : 'Salvar Gasto'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 47, 9, 54),
                   foregroundColor: Colors.white,

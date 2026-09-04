@@ -120,6 +120,17 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<void> confirmPasswordReset({
+    required String code,
+    required String newPassword,
+  }) async {
+    await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
     _appUser = null;
